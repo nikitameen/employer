@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuzzy Search and Mapping</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+    <h1>Fuzzy Search and Mapping</h1>
+    
+    <form id="mapping-form">
+        <select id="employer-dropdown">
+            <!-- Options populated dynamically -->
+        </select>
+        <input type="text" id="username" placeholder="Enter your username">
+        <button type="button" id="map-button">Map</button>
+    </form>
+    
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Employer ID</th>
+                <th>Employer Name</th>
+                <th>Address</th>
+                <th>City</th>
+                <th>State</th>
+                <th>Zipcode</th>
+                <th>County</th>
+                <th>MSA</th>
+                <th>State of Incorporation</th>
+                <th>SIC</th>
+                <th>SIC Description</th>
+                <!-- Add more columns here -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data rows will be populated dynamically -->
+        </tbody>
+    </table>
+    
+    <script>
+        $(document).ready(function() {
+            // Fetch data for employer dropdown from employer_parent.db
+            const db = new sqlite3.Database('employer_parent.db'); // Replace with your database name
+            const employerDropdown = $('#employer-dropdown');
+            db.all("SELECT * FROM employer_parent", [], function(err, rows) {
+                if (err) throw err;
+                rows.forEach(function(row) {
+                    employerDropdown.append($('<option>', {
+                        value: row.employerid,
+                        text: row.employername
+                    }));
+                });
+            });
+
+            // Initialize DataTable
+            const dataTable = $('#data-table').DataTable();
+
+            // Handle mapping button click
+            $('#map-button').click(function() {
+                const selectedEmployerId = $('#employer-dropdown').val();
+                const username = $('#username').val();
+
+                // Fetch data from companies table in data.db
+                const dataDb = new sqlite3.Database('data.db'); // Replace with your database name
+                dataDb.get("SELECT * FROM companies WHERE employerid = ?", [selectedEmployerId], function(err, row) {
+                    if (err) throw err;
+
+                    // Update the DataTable with new mapped data
+                    dataTable.row.add([
+                        selectedEmployerId,
+                        row.companyname,
+                        row.address1,
+                        row.City,
+                        row.State,
+                        row.zipcode,
+                        row.countyname,
+                        row.msaname,
+                        row.stateOfIncorporation,
+                        row.SIC,
+                        row.sicdescription
+                        // Add more columns here
+                    ]).draw(false);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
